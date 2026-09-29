@@ -1,3 +1,16 @@
+#!/usr/bin/env python3
+
+"""
+ReconX v1.0 - Basic Informtion Gathering Tool
+
+Author: Devansh Solanki
+
+Features:
+- WHOIS & DNS Enumeration
+- IP Geolocation
+- Recon Results Export
+"""
+
 import sys, os
 import whois
 import subprocess
